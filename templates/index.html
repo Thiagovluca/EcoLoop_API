@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>EcoLoop – IA contra o desperdício</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bege: #f4efe3;
+    --bege-escuro: #e8e0cd;
+    --branco: #ffffff;
+    --tinta: #1e2b23;
+    --suave: #62705f;
+    --borda: #ddd5c0;
+    --verde: #2f6b4a;
+    --verde-escuro: #1f4a33;
+    --verde-claro: #e3eee3;
+    --alerta: #b4432f;
+    --alerta-claro: #f9e5df;
+    --titulo: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --corpo: "Source Sans 3", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; font-family: var(--corpo); font-size: 1.05rem; line-height: 1.55;
+    color: var(--tinta); background: var(--bege);
+  }
+  .topo { background: var(--verde-escuro); color: #fff; }
+  .topo-in {
+    max-width: 1040px; margin: 0 auto; padding: 36px 24px 72px;
+    display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: flex-start;
+  }
+  .marca { display: flex; align-items: center; gap: 14px; }
+  .marca svg { width: 46px; height: 46px; flex: none; }
+  .marca h1 { margin: 0; font-family: var(--titulo); font-size: 2rem; line-height: 1.1; }
+  .lema { max-width: 56ch; margin: 18px 0 0; color: #d3e3d6; }
+  .status {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
+    border-radius: 999px; background: rgba(255,255,255,.12); font-size: .9rem;
+  }
+  .status i { width: 9px; height: 9px; border-radius: 50%; background: #e0b84a; }
+  .status.on i { background: #7fe0a4; }
+  .status.off i { background: #ff9d8c; }
+
+  main {
+    max-width: 1040px; margin: -44px auto 0; padding: 0 24px 40px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;
+  }
+  .painel {
+    background: var(--branco); border: 1px solid var(--borda); border-radius: 18px;
+    padding: 26px; box-shadow: 0 10px 30px -18px rgba(31,74,51,.45);
+  }
+  .painel h2 { margin: 0; font-family: var(--titulo); font-size: 1.35rem; }
+  .desc { margin: 4px 0 18px; color: var(--suave); font-size: .95rem; }
+  .exemplos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+  .chip {
+    font: inherit; font-size: .85rem; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--borda); background: var(--bege); color: var(--tinta);
+  }
+  .chip:hover { border-color: var(--verde); background: var(--verde-claro); }
+
+  .campo { margin-top: 16px; }
+  .linha { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  label, .rotulo { font-weight: 600; font-size: .95rem; }
+  .dica { color: var(--suave); font-weight: 400; font-size: .85rem; }
+  .valor {
+    font-family: var(--titulo); font-weight: 700; color: var(--verde); font-size: 1.05rem;
+    min-width: 6ch; text-align: right;
+  }
+  input[type=range] { width: 100%; margin: 8px 0 0; accent-color: var(--verde); }
+  input[type=number] {
+    width: 100%; margin-top: 6px; padding: 10px 12px; font: inherit;
+    border: 1px solid var(--borda); border-radius: 10px; background: var(--branco); color: var(--tinta);
+  }
+  :focus-visible { outline: 3px solid #86b79a; outline-offset: 2px; }
+
+  .seg { display: grid; gap: 6px; margin-top: 8px; }
+  .seg.dias { grid-template-columns: repeat(7, 1fr); }
+  .seg.dois { grid-template-columns: 1fr 1fr; }
+  .seg button {
+    font: inherit; font-size: .9rem; padding: 9px 4px; cursor: pointer; border-radius: 10px;
+    border: 1px solid var(--borda); background: var(--branco); color: var(--tinta);
+  }
+  .seg button:hover { border-color: var(--verde); }
+  .seg button[aria-pressed=true] {
+    background: var(--verde); border-color: var(--verde); color: #fff; font-weight: 600;
+  }
+
+  .enviar {
+    margin-top: 24px; width: 100%; padding: 13px; font: inherit; font-weight: 600; font-size: 1.05rem;
+    border: 0; border-radius: 12px; cursor: pointer; background: var(--verde); color: #fff;
+    transition: background .15s;
+  }
+  .enviar:hover { background: var(--verde-escuro); }
+  .enviar:disabled { opacity: .65; cursor: wait; }
+
+  .resultado { margin-top: 22px; border-radius: 14px; padding: 18px; display: none; }
+  .resultado.ok { display: block; background: var(--verde-claro); }
+  .resultado.alerta, .resultado.erro { display: block; background: var(--alerta-claro); }
+  .resultado.erro { color: var(--alerta); font-weight: 600; }
+  .veredito { margin: 0; font-family: var(--titulo); font-weight: 700; font-size: 1.15rem; }
+  .resultado.ok .veredito { color: var(--verde-escuro); }
+  .resultado.alerta .veredito { color: var(--alerta); }
+  .medidor { display: block; width: 190px; margin: 6px auto 0; }
+  .medidor .fundo { stroke: rgba(30,43,35,.12); }
+  .medidor .nivel { stroke: var(--verde); transition: stroke-dashoffset .9s cubic-bezier(.2,.8,.2,1); }
+  .resultado.alerta .nivel { stroke: var(--alerta); }
+  .pct { text-align: center; margin-top: -34px; font-family: var(--titulo); font-weight: 700; font-size: 1.9rem; }
+  .pct-rot { text-align: center; color: var(--suave); font-size: .85rem; margin-bottom: 4px; }
+  .grande { margin: 2px 0 0; font-family: var(--titulo); font-weight: 700; font-size: 2.6rem; color: var(--verde-escuro); line-height: 1.1; }
+  .comp { margin: 6px 0 0; color: var(--suave); font-size: .95rem; }
+  details { margin-top: 14px; font-size: .88rem; color: var(--suave); }
+  summary { cursor: pointer; }
+  pre {
+    margin: 8px 0 0; padding: 10px 12px; overflow-x: auto; border-radius: 10px;
+    background: rgba(255,255,255,.75); color: var(--tinta); font-size: .82rem;
+  }
+
+  .historico { grid-column: 1 / -1; }
+  .historico ul { list-style: none; margin: 12px 0 0; padding: 0; }
+  .historico li {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px;
+    padding: 10px 0; border-top: 1px solid var(--borda); font-size: .95rem;
+  }
+  .etq { font-weight: 600; font-size: .85rem; padding: 2px 10px; border-radius: 999px; background: var(--verde-claro); color: var(--verde-escuro); }
+  .etq.alerta { background: var(--alerta-claro); color: var(--alerta); }
+  .vazio { color: var(--suave); margin: 10px 0 0; }
+
+  footer { max-width: 1040px; margin: 0 auto; padding: 0 24px 40px; color: var(--suave); font-size: .88rem; }
+  footer a { color: var(--verde); }
+  @media (max-width: 480px) {
+    .seg.dias button { font-size: .78rem; padding: 9px 0; }
+    .painel { padding: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .medidor .nivel { transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="topo-in">
+    <div>
+      <div class="marca">
+        <svg viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="23" fill="#f4efe3"/>
+          <path d="M24 9c-5 7-9 11.500-9 16.500a9 9 0 0 0 18 0C33 20.500 29 16 24 9z" fill="#2f6b4a"/>
+          <path d="M24 36c0-6 2-9 6-12" stroke="#f4efe3" stroke-width="2.500" fill="none" stroke-linecap="round"/>
+        </svg>
+        <h1>EcoLoop</h1>
+      </div>
+      <p class="lema">Inteligência artificial para reduzir o desperdício de água e energia em casas, comunidades e pequenos negócios.</p>
+    </div>
+    <span class="status" id="status" role="status"><i></i><span>Verificando a API...</span></span>
+  </div>
+</header>
+
+<main>
+  <!-- Classificação: vazamento -->
+  <section class="painel" aria-labelledby="t-vaz">
+    <h2 id="t-vaz">Risco de vazamento de água</h2>
+    <p class="desc">Informe o consumo da última hora e o modelo indica se há risco de vazamento.</p>
+    <div class="exemplos">
+      <button type="button" class="chip" data-ex="vaz-risco">Madrugada, casa vazia</button>
+      <button type="button" class="chip" data-ex="vaz-normal">Tarde, casa ocupada</button>
+    </div>
+    <form id="form-vazamento">
+      <div class="campo">
+        <div class="linha"><label for="hora_do_dia">Hora do dia</label><span class="valor" id="v-hora">03h</span></div>
+        <input type="range" id="hora_do_dia" name="hora_do_dia" min="0" max="23" step="1" value="3">
+      </div>
+
+      <div class="campo">
+        <span class="rotulo" id="r-dia">Dia da semana</span>
+        <div class="seg dias" id="seg-dia" role="group" aria-labelledby="r-dia"></div>
+        <input type="hidden" id="dia_da_semana" name="dia_da_semana" value="2">
+      </div>
+
+      <div class="campo">
+        <label for="volume_consumido_na_ultima_hora">Volume na última hora <span class="dica">(litros)</span></label>
+        <input type="number" id="volume_consumido_na_ultima_hora" name="volume_consumido_na_ultima_hora" min="0" max="10000" step="any" value="120" required>
+        <input type="range" id="volume-slider" min="0" max="500" step="5" value="120" aria-label="Ajustar volume em litros">
+      </div>
+
+      <div class="campo">
+        <span class="rotulo" id="r-ocup">O imóvel está ocupado?</span>
+        <div class="seg dois" id="seg-ocup" role="group" aria-labelledby="r-ocup"></div>
+        <input type="hidden" id="imovel_ocupado" name="imovel_ocupado" value="0">
+      </div>
+
+      <button type="submit" class="enviar">Verificar risco</button>
+    </form>
+    <div id="res-vazamento" class="resultado" aria-live="polite"></div>
+  </section>
+
+  <!-- Regressão: consumo -->
+  <section class="painel" aria-labelledby="t-con">
+    <h2 id="t-con">Previsão de consumo de energia</h2>
+    <p class="desc">Estime o consumo mensal de energia (kWh) de uma residência.</p>
+    <div class="exemplos">
+      <button type="button" class="chip" data-ex="con-peq">Apartamento pequeno</button>
+      <button type="button" class="chip" data-ex="con-grande">Casa grande</button>
+    </div>
+    <form id="form-consumo">
+      <div class="campo">
+        <label for="historico_consumo_mes_anterior">Consumo do mês anterior <span class="dica">(kWh)</span></label>
+        <input type="number" id="historico_consumo_mes_anterior" name="historico_consumo_mes_anterior" min="0" max="100000" step="any" value="150" required>
+      </div>
+
+      <div class="campo">
+        <div class="linha"><label for="tamanho_imovel_m2">Tamanho do imóvel</label><span class="valor" id="v-m2">80 m²</span></div>
+        <input type="range" id="tamanho_imovel_m2" name="tamanho_imovel_m2" min="10" max="500" step="5" value="80">
+      </div>
+
+      <div class="campo">
+        <div class="linha"><label for="numero_pessoas">Número de pessoas</label><span class="valor" id="v-pessoas">3</span></div>
+        <input type="range" id="numero_pessoas" name="numero_pessoas" min="1" max="12" step="1" value="3">
+      </div>
+
+      <div class="campo">
+        <div class="linha"><label for="temperatura_media_mensal">Temperatura média do mês</label><span class="valor" id="v-temp">25 °C</span></div>
+        <input type="range" id="temperatura_media_mensal" name="temperatura_media_mensal" min="0" max="45" step="1" value="25">
+      </div>
+
+      <button type="submit" class="enviar">Prever consumo</button>
+    </form>
+    <div id="res-consumo" class="resultado" aria-live="polite"></div>
+  </section>
+
+  <section class="painel historico" aria-labelledby="t-hist">
+    <h2 id="t-hist">Consultas desta sessão</h2>
+    <p class="vazio" id="hist-vazio">Nenhuma consulta ainda. Faça uma previsão acima e ela aparece aqui.</p>
+    <ul id="hist-lista"></ul>
+  </section>
+</main>
+
+<footer>
+  Modelos treinados com dados fictícios (sintéticos); os resultados são demonstrativos.
+  Endpoints da API: <a href="/api">/api</a> e <a href="/saude">/saude</a>.
+</footer>
+
+<script>
+  var DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+  var reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var historico = [];
+
+  function pegar(id) { return document.getElementById(id); }
+
+  // ---------- Status da API ----------
+  var statusCaixa = pegar("status");
+  function ajustarStatus(classe, texto) {
+    statusCaixa.className = "status " + classe;
+    statusCaixa.querySelector("span").textContent = texto;
+  }
+  fetch("/saude")
+    .then(function (r) { return r.json(); })
+    .then(function () { ajustarStatus("on", "API online"); })
+    .catch(function () { ajustarStatus("off", "API fora do ar ou acordando"); });
+
+  // ---------- Botões de escolha (dia da semana e ocupação) ----------
+  function montarSeg(idCaixa, idHidden, opcoes) {
+    var caixa = pegar(idCaixa);
+    var hidden = pegar(idHidden);
+    opcoes.forEach(function (op) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = op.texto;
+      b.dataset.v = op.valor;
+      b.addEventListener("click", function () { escolher(idCaixa, idHidden, op.valor); });
+      caixa.appendChild(b);
+    });
+    escolher(idCaixa, idHidden, hidden.value);
+  }
+  function escolher(idCaixa, idHidden, valor) {
+    pegar(idHidden).value = valor;
+    pegar(idCaixa).querySelectorAll("button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.v === String(valor)));
+    });
+  }
+  montarSeg("seg-dia", "dia_da_semana", DIAS.map(function (d, i) { return { texto: d, valor: i }; }));
+  montarSeg("seg-ocup", "imovel_ocupado", [
+    { texto: "Vazio", valor: 0 }, { texto: "Com pessoas", valor: 1 }
+  ]);
+
+  // ---------- Sliders com valor ao vivo ----------
+  function ligar(idCampo, idValor, formatar) {
+    var campo = pegar(idCampo);
+    function atualizar() { pegar(idValor).textContent = formatar(campo.value); }
+    campo.addEventListener("input", atualizar);
+    atualizar();
+  }
+  ligar("hora_do_dia", "v-hora", function (v) { return String(v).padStart(2, "0") + "h"; });
+  ligar("tamanho_imovel_m2", "v-m2", function (v) { return v + " m²"; });
+  ligar("numero_pessoas", "v-pessoas", function (v) { return v; });
+  ligar("temperatura_media_mensal", "v-temp", function (v) { return v + " °C"; });
+
+  // volume: slider e caixa numérica andam juntos
+  var volNum = pegar("volume_consumido_na_ultima_hora");
+  var volSlider = pegar("volume-slider");
+  volSlider.addEventListener("input", function () { volNum.value = volSlider.value; });
+  volNum.addEventListener("input", function () { volSlider.value = volNum.value; });
+
+  // ---------- Exemplos prontos ----------
+  var EXEMPLOS = {
+    "vaz-risco":  { hora_do_dia: 3, dia_da_semana: 2, volume_consumido_na_ultima_hora: 120, imovel_ocupado: 0 },
+    "vaz-normal": { hora_do_dia: 15, dia_da_semana: 2, volume_consumido_na_ultima_hora: 40, imovel_ocupado: 1 },
+    "con-peq":    { historico_consumo_mes_anterior: 90, tamanho_imovel_m2: 45, numero_pessoas: 1, temperatura_media_mensal: 22 },
+    "con-grande": { historico_consumo_mes_anterior: 320, tamanho_imovel_m2: 220, numero_pessoas: 5, temperatura_media_mensal: 30 }
+  };
+  function preencher(dados) {
+    Object.keys(dados).forEach(function (nome) {
+      var campo = pegar(nome);
+      campo.value = dados[nome];
+      campo.dispatchEvent(new Event("input"));
+    });
+    if ("dia_da_semana" in dados) escolher("seg-dia", "dia_da_semana", dados.dia_da_semana);
+    if ("imovel_ocupado" in dados) escolher("seg-ocup", "imovel_ocupado", dados.imovel_ocupado);
+    if ("volume_consumido_na_ultima_hora" in dados) volSlider.value = dados.volume_consumido_na_ultima_hora;
+  }
+  document.querySelectorAll(".chip").forEach(function (chip) {
+    chip.addEventListener("click", function () { preencher(EXEMPLOS[chip.dataset.ex]); });
+  });
+
+  // ---------- Envio para a API ----------
+  function lerCampos(form) {
+    var dados = {};
+    new FormData(form).forEach(function (valor, nome) { dados[nome] = Number(valor); });
+    return dados;
+  }
+
+  async function enviar(form, rota, caixa, mostrar) {
+    var botao = form.querySelector(".enviar");
+    var rotulo = botao.textContent;
+    var dados = lerCampos(form);
+    botao.disabled = true;
+    botao.textContent = "Calculando...";
+    caixa.className = "resultado";
+    try {
+      var resposta = await fetch(rota, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
+      });
+      var json = await resposta.json();
+      if (!resposta.ok) {
+        caixa.className = "resultado erro";
+        caixa.textContent = json.erro || "Não foi possível calcular.";
+      } else {
+        mostrar(json, dados, caixa);
+        ajustarStatus("on", "API online");
+      }
+    } catch (e) {
+      caixa.className = "resultado erro";
+      caixa.textContent = "Não foi possível falar com a API. No plano gratuito do Render ela pode estar acordando; tente de novo em instantes.";
+      ajustarStatus("off", "API fora do ar ou acordando");
+    }
+    botao.disabled = false;
+    botao.textContent = rotulo;
+  }
+
+  // anima um número de 0 até o valor final
+  function contar(destino, fim, formatar) {
+    if (reduzir) { destino.textContent = formatar(fim); return; }
+    var inicio = performance.now();
+    function passo(agora) {
+      var t = Math.min((agora - inicio) / 800, 1);
+      var suave = 1 - Math.pow(1 - t, 3);
+      destino.textContent = formatar(fim * suave);
+      if (t < 1) requestAnimationFrame(passo);
+    }
+    requestAnimationFrame(passo);
+  }
+
+  function blocoJson(dados, json) {
+    var d = document.createElement("details");
+    var s = document.createElement("summary");
+    s.textContent = "Ver o JSON enviado e recebido";
+    var p = document.createElement("pre");
+    p.textContent = "Enviado:\n" + JSON.stringify(dados, null, 2) + "\n\nRecebido:\n" + JSON.stringify(json, null, 2);
+    d.appendChild(s);
+    d.appendChild(p);
+    return d;
+  }
+
+  function mostrarVazamento(json, dados, caixa) {
+    var pct = json.probabilidade_vazamento * 100;
+    var risco = json.houve_vazamento === 1;
+    caixa.className = "resultado " + (risco ? "alerta" : "ok");
+    caixa.innerHTML =
+      '<p class="veredito"></p>' +
+      '<svg class="medidor" viewBox="0 0 120 70" aria-hidden="true">' +
+      '<path class="fundo" d="M10 62 A50 50 0 0 1 110 62" pathLength="100" fill="none" stroke-width="12" stroke-linecap="round"/>' +
+      '<path class="nivel" d="M10 62 A50 50 0 0 1 110 62" pathLength="100" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="100"/>' +
+      '</svg>' +
+      '<div class="pct">0%</div><div class="pct-rot">probabilidade de vazamento</div>';
+    caixa.querySelector(".veredito").textContent = (risco ? "⚠ " : "✓ ") + json.mensagem;
+    caixa.appendChild(blocoJson(dados, json));
+    var nivel = caixa.querySelector(".nivel");
+    requestAnimationFrame(function () { nivel.style.strokeDashoffset = 100 - pct; });
+    contar(caixa.querySelector(".pct"), pct, function (n) { return n.toFixed(1).replace(".", ",") + "%"; });
+
+    adicionarHistorico({
+      tipo: "Vazamento",
+      resumo: String(dados.hora_do_dia).padStart(2, "0") + "h, " + DIAS[dados.dia_da_semana] + ", " +
+              dados.volume_consumido_na_ultima_hora + " L, " + (dados.imovel_ocupado ? "ocupado" : "vazio"),
+      resultado: (risco ? "Risco " : "Normal ") + pct.toFixed(1).replace(".", ",") + "%",
+      alerta: risco
+    });
+  }
+
+  function mostrarConsumo(json, dados, caixa) {
+    var kwh = json.consumo_previsto_kwh;
+    var ant = dados.historico_consumo_mes_anterior;
+    caixa.className = "resultado ok";
+    caixa.innerHTML = '<div>Consumo previsto para o mês</div><p class="grande">0 kWh</p><p class="comp"></p>';
+    contar(caixa.querySelector(".grande"), kwh, function (n) {
+      return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " kWh";
+    });
+    if (ant > 0) {
+      var dif = ((kwh - ant) / ant) * 100;
+      var sentido = dif >= 0 ? "acima" : "abaixo";
+      caixa.querySelector(".comp").textContent =
+        Math.abs(dif).toFixed(1).replace(".", ",") + "% " + sentido + " do mês anterior (" + ant + " kWh).";
+    }
+    caixa.appendChild(blocoJson(dados, json));
+
+    adicionarHistorico({
+      tipo: "Consumo",
+      resumo: dados.tamanho_imovel_m2 + " m², " + dados.numero_pessoas + " pessoa(s), " + dados.temperatura_media_mensal + " °C",
+      resultado: kwh.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + " kWh",
+      alerta: false
+    });
+  }
+
+  // ---------- Histórico da sessão ----------
+  function adicionarHistorico(item) {
+    historico.unshift(item);
+    if (historico.length > 6) historico.pop();
+    var lista = pegar("hist-lista");
+    lista.innerHTML = "";
+    historico.forEach(function (h) {
+      var li = document.createElement("li");
+      var esq = document.createElement("span");
+      esq.textContent = h.tipo + ": " + h.resumo;
+      var dir = document.createElement("span");
+      dir.className = "etq" + (h.alerta ? " alerta" : "");
+      dir.textContent = h.resultado;
+      li.appendChild(esq);
+      li.appendChild(dir);
+      lista.appendChild(li);
+    });
+    pegar("hist-vazio").style.display = "none";
+  }
+
+  var formVazamento = pegar("form-vazamento");
+  var formConsumo = pegar("form-consumo");
+  formVazamento.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    enviar(formVazamento, "/prever/vazamento", pegar("res-vazamento"), mostrarVazamento);
+  });
+  formConsumo.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    enviar(formConsumo, "/prever/consumo", pegar("res-consumo"), mostrarConsumo);
+  });
+</script>
+</body>
+</html>
